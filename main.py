@@ -2,7 +2,7 @@ import sys
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw
+from gi.repository import Gtk, Adw, Gio
 
 # Construct GTK Window
 class MainWindow(Gtk.ApplicationWindow):
@@ -49,8 +49,11 @@ class MainWindow(Gtk.ApplicationWindow):
         # Radio Button
         ## Buttons
         self.radio_a = Gtk.CheckButton(label='Radio A')
+        self.radio_a.connect('toggled', self.radio_handle, 'A')
         self.radio_b = Gtk.CheckButton(label='Radio B')
+        self.radio_b.connect('toggled', self.radio_handle, 'B')
         self.radio_c = Gtk.CheckButton(label='Radio C')
+        self.radio_c.connect('toggled', self.radio_handle, 'C')
 
         ## Create Group
         self.radio_b.set_group(self.radio_a)
@@ -66,6 +69,72 @@ class MainWindow(Gtk.ApplicationWindow):
         self.radio_box.append(self.radio_c)
         self.box_sub.append(self.radio_box)
 
+        # Switch
+        ## Switch
+        self.switch = Gtk.Switch()
+        self.switch.set_active(True) # Manually change value
+        self.switch.connect("state-set", self.switch_handler, 'Switch')
+
+        ## Style
+        self.switch_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.switch_box.append(self.switch)
+        self.margin_around(self.switch_box, 5)
+        self.box_main.append(self.switch_box)
+
+        ## Label
+        self.label_switch = Gtk.Label(label='Turn it on or off!')
+        self.switch_box.append(self.label_switch)
+        self.switch_box.set_spacing(5)
+
+        # Slider
+        ## Scale
+        self.scale = Gtk.Scale()
+        self.scale.set_digits(0) # Number of decimal places
+        self.scale.set_range(0, 10)
+        self.scale.set_draw_value(True) # Show label with value of scale
+        self.scale.set_value(5) # Manually change what its set to
+        self.scale.connect('value-changed', self.slider_handler, 'Slider')
+        
+        ## Style
+        self.margin_around(self.scale, 8)
+        self.box_main.append(self.scale)
+
+        # Button in Header Bar
+        ## Header Bar
+        self.header = Gtk.HeaderBar()
+        self.set_titlebar(self.header)
+
+        ## Button
+        self.button_header = Gtk.Button(label='Click Me!')
+        self.button_header.connect('clicked', self.button_handler, 'Home Button')
+        self.header.pack_start(self.button_header)
+        self.button_header.set_icon_name('user-home-symbolic') # Icon for button, from /usr/share/icons/Adwaita/scalable/*
+
+        self.button_header_end = Gtk.Button()
+        self.button_header_end.connect('clicked', self.button_handler, 'Open Button')
+        self.header.pack_end(self.button_header_end)
+        self.button_header_end.set_icon_name('folder-symbolic')
+
+        # Open File
+        ## Dialog
+        self.open_dialog = Gtk.FileDialog.new()
+        self.open_dialog.set_title('Pick a file!')
+
+        ## File Filter
+        self.filter = Gtk.FileFilter()
+        self.filter.set_name('Image Files')
+        self.filter.add_mime_type('image/jpeg')
+        self.filter.add_mime_type('image/png')
+        self.filter.add_mime_type('image/gif')
+        self.filter.add_mime_type('image/tiff')
+
+        self.filters = Gio.ListStore.new(Gtk.FileFilter)
+        self.filters.append(self.filter)
+
+        self.open_dialog.set_filters(self.filters)
+        self.open_dialog.set_default_filter(self.filter)
+
+
 
 
     # Window Functions
@@ -77,6 +146,11 @@ class MainWindow(Gtk.ApplicationWindow):
             self.close()
         else:
             print('Hello, World!')
+    
+    def button_handler(self, button, name):
+        print(f'> {name} was pressed!')
+        if name == 'Open Button':
+            self.open_dialog.open(self, None, self.file_dialog_callback)
 
     def margin_around(self, widget, margin: int, vert=None, horiz=None):
         if vert != None:
@@ -92,8 +166,25 @@ class MainWindow(Gtk.ApplicationWindow):
             widget.set_margin_start(margin)
             widget.set_margin_end(margin)
 
-    def radio_handle(self, radio):
-        print(f'> Radio {radio} Toggled!')
+    def radio_handle(self, widget, radio):
+        print(f'> Radio {radio} Toggled {"On" if widget.get_active() else "Off"}!')
+
+    def switch_handler(self, switch, state, name):
+        print(f"> {name} has been turned {'on' if state else 'off'}")
+
+    def slider_handler(self, slider, name):
+        print(f'> {name} set to {slider.get_value()}')
+
+    def file_dialog_callback(self, dialog, result):
+        try:
+            file = dialog.open_finish(result)
+            if file is not None:
+                print(f'> Got file path {file.get_path()}')
+                # Handle Loading File
+        
+        except GLib.Error as error:
+            print(f'Error Opening File: {error.message}')
+
         
 # Libadwaita
 class MyApp(Adw.Application):
