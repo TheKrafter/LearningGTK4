@@ -15,11 +15,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.box_meta = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.box_sub = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.box_meta.append(self.box_main)
-        self.box_meta.append(self.box_sub)
+        #self.box_meta.append(self.box_main)
+        #self.box_meta.append(self.box_sub)
         self.set_child(self.box_meta)
 
-        self.set_default_size(600, 250)
+        #self.set_default_size(600, 250)
         self.set_title('Learning GTK4')
 
         # Button Boxes
@@ -115,6 +115,38 @@ class MainWindow(Gtk.ApplicationWindow):
         self.header.pack_end(self.button_header_end)
         self.button_header_end.set_icon_name('folder-symbolic')
 
+        # Adwaita Flap
+        ## Flap
+        self.flap_adw = Adw.Flap.new()
+        self.flap_adw.set_reveal_flap(False)
+        self.flap_adw.set_locked(True)
+
+        ## Pages
+        ### Stack of Pages
+        self.flap_stack = Gtk.Stack.new()
+        self.flap_adw.set_content(self.flap_stack)
+
+        ### Page A
+        self.page_a_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.page_a_content.append(self.box_main)
+        self.flap_stack.add_titled(self.page_a_content, name='page_a', title='Page A')
+
+        ### Page B
+        self.page_b_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.page_b_content.append(self.box_sub)
+        self.flap_stack.add_titled(self.page_b_content, name='page_b', title='Page B')
+
+
+
+
+        ## Button
+        self.button_flap = Gtk.ToggleButton.new()
+        self.button_flap.set_icon_name('open-menu-symbolic')
+        self.header.pack_start(self.button_flap)
+
+        self.button_flap.connect('clicked', self.toggle_flap, self.flap_adw)
+
+
         # Open File
         ## Dialog
         self.open_dialog = Gtk.FileDialog.new()
@@ -182,10 +214,13 @@ class MainWindow(Gtk.ApplicationWindow):
                 print(f'> Got file path {file.get_path()}')
                 # Handle Loading File
         
-        except GLib.Error as error:
+        except BaseException as error:
             print(f'Error Opening File: {error.message}')
 
-        
+    def toggle_flap(self, button, flap):
+        flap.set_reveal_flap(not flap.get_reveal_flap())
+        print(f'> Flap is now {"visible" if flap.get_reveal_flap() else "hidden"}.')
+
 # Libadwaita
 class MyApp(Adw.Application):
     def __init__(self, **kwargs):
